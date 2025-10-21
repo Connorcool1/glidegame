@@ -5,12 +5,33 @@ function clear() {
     ctx.clearRect(0, 0, c.width, c.height);
 }
 
-const input = document.querySelector("input")
-input.addEventListener("keydown", logkey);
+// const input = document.querySelector("input");
+// if (input)
+//     input.addEventListener("keydown", logKey);
 
+const keyLog = [];
 function logKey(e) {
-    console.log(e.code);
+    console.log(e.type, e.code);
+    keyLog.push({ type: e.type, code: e.code, time: Date.now() });
+
+    if (keyLog.length > 1000) keyLog.shift();
+
+    if (e.type === "keydown") {
+        if (e.code === "ArrowRight") {
+            playerPiece.speedX = 1;
+        } else if (e.code === "ArrowLeft") {
+            playerPiece.speedX = -1;
+        }
+    } else if (e.type === "keyup") {
+        if (e.code === "ArrowRight" || e.code === "ArrowLeft") {
+            playerPiece.speedX = 0;
+        }
+    }
 }
+window.addEventListener("keydown", logKey);
+window.addEventListener("keyup", logKey);
+
+var playerPiece;
 
 function startGame() {
     console.log("Starting game");
