@@ -42,11 +42,29 @@ window.addEventListener("keydown", logKey);
 window.addEventListener("keyup", logKey);
 
 var playerPiece;
+const blocks = [];
 
 function startGame() {
     console.log("Starting game");
+    buildLevel();
     playerPiece = new Player(20, 20, 5, 5);
     interval;
+}
+
+function Block(x, y, width, height) {
+    this.x = x;
+    this.y = y;
+    this.width = width;
+    this.height = height;
+
+    this.update = function() {
+        ctx.fillRect(this.x, this.y, this.width, this.height);
+    }
+}
+
+function buildLevel() {
+    blocks.push(new Block(100, 700, 200, 50));
+    blocks.push(new Block(400, 600, 200, 50));
 }
 
 function Player(x, y, width, height) {
@@ -88,6 +106,7 @@ function Player(x, y, width, height) {
         ctx.stroke();
     }
     this.updatePos = function() {
+        this.setPolar(this.speedX, this.speedY);
         this.getSpeedX();
         this.getSpeedY();
         // Gravity
@@ -132,18 +151,84 @@ function Player(x, y, width, height) {
         this.collision();
     }
     this.collision = function() {
+        // Floor collision
         var bottom = c.height;
         if (this.y + this.height > bottom) {
             this.y = bottom - this.height
             this.speedX = 0;
+
+            this.speedY = 0;
             onGround = true;
         }
         else onGround = false;
-    }
+
+        // Wall collision
+        var right = c.width;
+        if (this.x + this.width > right) {
+            this.x = right - this.width;
+            this.speedX = 0;
+        }
+        var left = 0;
+        if (this.x - this.width < left) {
+            this.x = left + this.width;
+            this.speedX = 0;
+        }
+
+        var top = 0;
+        if (this.y - this.height < top) {
+            this.y = top + this.height;
+            this.speedY = -this.speedY / 2; //bounce down
+        }
+
+        //Block collision
+
+        blocks.forEach(block => {
+            //AABB collision detection
+            if (this.x + this.width > block.x &&
+                this.x - this.width < block.x + block.width &&
+                this.y + this.height > block.y &&
+                this.y - this.height < block.y + block.height) {
+                    // Top of block
+                    if (this.y + this.height - this.speedY <= block.y) {
+                        this.y = block.y - this.height;
+                        this.speedY = 0;
+                        this.speedX = 0;
+                        onGround = true;
+                    }
+                    //  Bottom of block
+                    if (this.y - this.speedY >= block.y + block.height) {
+                        this.y = block.y + block.height + this.height;
+                        this.speedY = 0;
+                    }
+                    // Left of block
+                    if (this.x + this.width - this.speedX <= block.x) {
+                        this.x = block.x - this.width;
+                        this.speedX = 0;
+                    }
+                    // Right of block
+                    if (this.x - this.speedX >= block.x + block.width) {
+                        this.x = block.x + block.width + this.width;
+                        this.speedX = 0;
+                    }
+                    else {
+                        this.x -= this.speedX;
+                        this.y -= this.speedY;
+                    }
+                }
+        });
+    }   
 };
+
+                    // this.y = block.y - this.height;
+                    // this.speedY = 0;
+                    // this.speedX = 0;
+                    // onGround = true;
 
 function updateGameArea() {
     clear();
+    blocks.forEach(block => {
+        block.update();
+    });
     playerPiece.updatePos();
     playerPiece.update();
 }
